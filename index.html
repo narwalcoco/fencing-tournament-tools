@@ -102,8 +102,14 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
 
+        // Debug: Log the full table rows to check structure
         const allRows = [...doc.querySelectorAll("table tr")];
+        console.log(allRows); // Log the rows to inspect the structure
+
         const dataRows = allRows.filter(row => row.querySelectorAll("td").length >= 4);
+
+        // Debug: Log the data rows to see which ones are getting processed
+        console.log(dataRows); // Log the rows with data
 
         const yourRow = dataRows.find(row => row.textContent.toLowerCase().includes(fencerName));
 
@@ -111,6 +117,9 @@
           resultsDiv.innerHTML = "<p class='error'>Fencer not found. Please check your name and try again.</p>";
           return;
         }
+
+        // Debug: Log the row that was found
+        console.log(yourRow); // Log the found row
 
         const cells = yourRow.querySelectorAll("td");
         const ts = parseInt(cells[2]?.textContent || "0", 10);
