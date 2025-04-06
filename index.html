@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fencing Pool Calculator</title>
+  <link rel="stylesheet" href="style.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -55,13 +56,17 @@
     #results {
       margin-top: 2rem;
     }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Fencing Pool Results</h1>
     <label for="tournamentUrl">Enter Tournament Link:</label>
-    <input type="text" id="tournamentUrl" placeholder="Paste Fencing Time Live link here" />
+    <input type="text" id="tournamentUrl" placeholder="Paste Fencing Time Live or AskFRED link here" />
 
     <label for="fencerName">Who are you?</label>
     <input type="text" id="fencerName" placeholder="Type your full name" />
@@ -73,8 +78,8 @@
 
   <script>
     document.getElementById("submitBtn").addEventListener("click", async () => {
-      const url = document.getElementById("tournamentUrl").value;
-      const fencerName = document.getElementById("fencerName").value.toLowerCase().trim();
+      const url = document.getElementById("tournamentUrl").value.trim();
+      const fencerName = document.getElementById("fencerName").value.trim().toLowerCase();
       const resultsDiv = document.getElementById("results");
 
       if (!url || !fencerName) {
@@ -85,43 +90,43 @@
       try {
         const proxyUrl = "https://cors-anywhere.herokuapp.com/" + url;
         const response = await fetch(proxyUrl);
+
+        if (!response.ok) throw new Error("Failed to fetch tournament data.");
+
         const htmlText = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
 
         const allRows = [...doc.querySelectorAll("table tr")];
-        const dataRows = allRows.filter(row => row.querySelectorAll("td").length > 3);
+        const dataRows = allRows.filter(row => row.querySelectorAll("td").length >= 4);
 
-        // Count fencers (rows with actual data)
-        const totalFencers = dataRows.length;
-        const byes = totalFencers % 2 === 0 ? 0 : 1;
-
-        // Find the fencer's row by name
-        let yourRow = dataRows.find(row =>
-          row.innerText.toLowerCase().includes(fencerName)
-        );
+        const yourRow = dataRows.find(row => row.textContent.toLowerCase().includes(fencerName));
 
         if (!yourRow) {
-          resultsDiv.innerHTML = "<p>Fencer not found. Please check your name and try again.</p>";
+          resultsDiv.innerHTML = "<p class='error'>Fencer not found. Please check your name and try again.</p>";
           return;
         }
 
         const cells = yourRow.querySelectorAll("td");
+        const ts = parseInt(cells[2]?.textContent || "0", 10);
+        const tr = parseInt(cells[3]?.textContent || "0", 10);
+        const victories = cells[1]?.textContent || "-";
+
         const resultHTML = `
           <h2>Results for ${fencerName}</h2>
-          <p><strong>Victories:</strong> ${cells[1]?.textContent || "-"}</p>
-          <p><strong>Touches Scored (TS):</strong> ${cells[2]?.textContent || "-"}</p>
-          <p><strong>Touches Received (TR):</strong> ${cells[3]?.textContent || "-"}</p>
-          <p><strong>Indicator (TS - TR):</strong> ${parseInt(cells[2]?.textContent || 0) - parseInt(cells[3]?.textContent || 0)}</p>
-          <p><strong>Number of Byes:</strong> ${byes}</p>
+          <p><strong>Victories:</strong> ${victories}</p>
+          <p><strong>Touches Scored (TS):</strong> ${ts}</p>
+          <p><strong>Touches Received (TR):</strong> ${tr}</p>
+          <p><strong>Indicator (TS - TR):</strong> ${ts - tr}</p>
         `;
+
         resultsDiv.innerHTML = resultHTML;
+
       } catch (err) {
         console.error(err);
-        resultsDiv.innerHTML = `<p>Error loading tournament data. Check the link or try again later.</p>`;
+        resultsDiv.innerHTML = `<p class='error'>Error loading tournament data. Make sure you've allowed proxy access and that the link is correct.</p>`;
       }
     });
   </script>
 </body>
 </html>
-``
