@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fencing Pool Calculator</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -62,7 +61,7 @@
   <div class="container">
     <h1>Fencing Pool Results</h1>
     <label for="tournamentUrl">Enter Tournament Link:</label>
-    <input type="text" id="tournamentUrl" placeholder="Paste Fencing Time Live or AskFRED link here" />
+    <input type="text" id="tournamentUrl" placeholder="Paste Fencing Time Live link here" />
 
     <label for="fencerName">Who are you?</label>
     <input type="text" id="fencerName" placeholder="Type your full name" />
@@ -75,7 +74,7 @@
   <script>
     document.getElementById("submitBtn").addEventListener("click", async () => {
       const url = document.getElementById("tournamentUrl").value;
-      const fencerName = document.getElementById("fencerName").value.toLowerCase();
+      const fencerName = document.getElementById("fencerName").value.toLowerCase().trim();
       const resultsDiv = document.getElementById("results");
 
       if (!url || !fencerName) {
@@ -90,14 +89,17 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
 
-        // Get total number of fencers in the tournament
-        const rows = [...doc.querySelectorAll("table tr")];
-        let totalFencers = rows.filter(row => row.innerText.toLowerCase().includes("fencer")).length;
-        
-        // Calculate number of byes (assuming even number of competitors is ideal)
-        let byes = totalFencers % 2 === 0 ? 0 : 1; // 1 bye if odd, 0 if even
+        const allRows = [...doc.querySelectorAll("table tr")];
+        const dataRows = allRows.filter(row => row.querySelectorAll("td").length > 3);
 
-        let yourRow = rows.find(row => row.innerText.toLowerCase().includes(fencerName));
+        // Count fencers (rows with actual data)
+        const totalFencers = dataRows.length;
+        const byes = totalFencers % 2 === 0 ? 0 : 1;
+
+        // Find the fencer's row by name
+        let yourRow = dataRows.find(row =>
+          row.innerText.toLowerCase().includes(fencerName)
+        );
 
         if (!yourRow) {
           resultsDiv.innerHTML = "<p>Fencer not found. Please check your name and try again.</p>";
@@ -122,3 +124,4 @@
   </script>
 </body>
 </html>
+``
