@@ -90,8 +90,13 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlText, "text/html");
 
-        // TODO: Customize the scraping below based on the structure of the tournament site
+        // Get total number of fencers in the tournament
         const rows = [...doc.querySelectorAll("table tr")];
+        let totalFencers = rows.filter(row => row.innerText.toLowerCase().includes("fencer")).length;
+        
+        // Calculate number of byes (assuming even number of competitors is ideal)
+        let byes = totalFencers % 2 === 0 ? 0 : 1; // 1 bye if odd, 0 if even
+
         let yourRow = rows.find(row => row.innerText.toLowerCase().includes(fencerName));
 
         if (!yourRow) {
@@ -106,6 +111,7 @@
           <p><strong>Touches Scored (TS):</strong> ${cells[2]?.textContent || "-"}</p>
           <p><strong>Touches Received (TR):</strong> ${cells[3]?.textContent || "-"}</p>
           <p><strong>Indicator (TS - TR):</strong> ${parseInt(cells[2]?.textContent || 0) - parseInt(cells[3]?.textContent || 0)}</p>
+          <p><strong>Number of Byes:</strong> ${byes}</p>
         `;
         resultsDiv.innerHTML = resultHTML;
       } catch (err) {
