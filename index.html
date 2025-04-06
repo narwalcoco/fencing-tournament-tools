@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fencing Pool Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+    }
+    h1 {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 1rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #results {
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Fencing Pool Results</h1>
+    <label for="tournamentUrl">Enter Tournament Link:</label>
+    <input type="text" id="tournamentUrl" placeholder="Paste Fencing Time Live or AskFRED link here" />
+
+    <label for="fencerName">Who are you?</label>
+    <input type="text" id="fencerName" placeholder="Type your full name" />
+
+    <button id="submitBtn">Get My Results</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const url = document.getElementById("tournamentUrl").value;
+      const fencerName = document.getElementById("fencerName").value.toLowerCase();
+      const resultsDiv = document.getElementById("results");
+
+      if (!url || !fencerName) {
+        alert("Please enter both the tournament link and your name.");
+        return;
+      }
+
+      try {
+        const proxyUrl = "https://cors-anywhere.herokuapp.com/" + url;
+        const response = await fetch(proxyUrl);
+        const htmlText = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+
+        // TODO: Customize the scraping below based on the structure of the tournament site
+        const rows = [...doc.querySelectorAll("table tr")];
+        let yourRow = rows.find(row => row.innerText.toLowerCase().includes(fencerName));
+
+        if (!yourRow) {
+          resultsDiv.innerHTML = "<p>Fencer not found. Please check your name and try again.</p>";
+          return;
+        }
+
+        const cells = yourRow.querySelectorAll("td");
+        const resultHTML = `
+          <h2>Results for ${fencerName}</h2>
+          <p><strong>Victories:</strong> ${cells[1]?.textContent || "-"}</p>
+          <p><strong>Touches Scored (TS):</strong> ${cells[2]?.textContent || "-"}</p>
+          <p><strong>Touches Received (TR):</strong> ${cells[3]?.textContent || "-"}</p>
+          <p><strong>Indicator (TS - TR):</strong> ${parseInt(cells[2]?.textContent || 0) - parseInt(cells[3]?.textContent || 0)}</p>
+        `;
+        resultsDiv.innerHTML = resultHTML;
+      } catch (err) {
+        console.error(err);
+        resultsDiv.innerHTML = `<p>Error loading tournament data. Check the link or try again later.</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
